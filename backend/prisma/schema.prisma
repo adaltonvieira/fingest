@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================================
+// ENUMS
+// ==========================================================
+
+enum TransactionType {
+  RECEITA
+  DESPESA
+}
+
+enum TransactionStatus {
+  PAGO
+  RECEBIDO
+  PENDENTE
+  CANCELADO
+}
+
+enum AccountType {
+  CORRENTE
+  POUPANCA
+  CARTEIRA
+  DINHEIRO
+  PIX
+  INVESTIMENTO
+  CRIPTO
+  OUTRO
+}
+
+// ==========================================================
+// USER (single-user hoje, mas modelado para multiusuário futuro)
+// ==========================================================
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  accounts     Account[]
+  categories   Category[]
+  costCenters  CostCenter[]
+  transactions Transaction[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revoked   Boolean  @default(false)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ==========================================================
+// ACCOUNTS
+// ==========================================================
+
+model Account {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  type          AccountType
+  initialBalance Decimal    @default(0) @db.Decimal(14, 2)
+  currentBalance Decimal    @default(0) @db.Decimal(14, 2)
+  color         String?
+  icon          String?
+  archived      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  transactions  Transaction[]
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+// ==========================================================
+// COST CENTERS
+// ==========================================================
+
+model CostCenter {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String
+
+  transactions Transaction[]
+
+  @@index([userId])
+  @@map("cost_centers")
+}
+
+// ==========================================================
+// CATEGORIES (com subcategorias auto-referenciadas)
+// ==========================================================
+
+model Category {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  type        TransactionType
+  color       String   @default("#6366F1")
+  icon        String   @default("tag")
+  description String?
+
+  parentId    String?
+  parent      Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id], onDelete: Cascade)
+  subcategories Category[] @relation("CategoryToSubcategory")
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("categories")
+}
+
+// ==========================================================
+// TRANSACTIONS (receitas e despesas)
+// ==========================================================
+
+model Transaction {
+  id          String             @id @default(uuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type        TransactionType
+  description String
+  amount      Decimal            @db.Decimal(14, 2)
+  status      TransactionStatus  @default(PENDENTE)
+
+  date        DateTime           // data do lançamento
+  dueDate     DateTime?          // vencimento (despesas/receitas a prazo)
+  paidAt      DateTime?          // quando foi efetivamente pago/recebido
+  competencia DateTime?          // mês de competência contábil
+
+  accountId   String
+  account     Account            @relation(fields: [accountId], references: [id])
+
+  categoryId  String?
+  category    Category?          @relation(fields: [categoryId], references: [id])
+
+  costCenterId String?
+  costCenter  CostCenter?        @relation(fields: [costCenterId], references: [id])
+
+  paymentMethod String?          // pix, dinheiro, cartao, boleto, transferencia
+  clientOrSupplier String?       // nome livre do cliente (receita) ou fornecedor (despesa)
+
+  installmentGroupId String?     // agrupa parcelas de um mesmo lançamento
+  installmentNumber  Int?        // 1, 2, 3...
+  installmentTotal   Int?        // total de parcelas
+
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, date])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([installmentGroupId])
+  @@map("transactions")
+}
