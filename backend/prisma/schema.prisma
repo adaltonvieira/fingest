@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -23,6 +24,12 @@ enum TransactionStatus {
   CANCELADO
 }
 
+enum InvoiceStatus {
+  ABERTA
+  FECHADA
+  PAGA
+}
+
 enum AccountType {
   CORRENTE
   POUPANCA
@@ -43,6 +50,8 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -51,6 +60,10 @@ model User {
   costCenters  CostCenter[]
   transactions Transaction[]
   refreshTokens RefreshToken[]
+  creditCards  CreditCard[]
+  recurringRules RecurringRule[]
+  goals        Goal[]
+  auditLogs    AuditLog[]
 
   @@map("users")
 }
@@ -180,4 +193,162 @@ model Transaction {
   @@index([categoryId])
   @@index([installmentGroupId])
   @@map("transactions")
+}
+
+// ==========================================================
+// CREDIT CARDS, INVOICES, INVOICE ITEMS
+// ==========================================================
+
+model CreditCard {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  bank         String?
+  limit        Decimal  @default(0) @db.Decimal(14, 2)
+  closingDay   Int      // dia do mês em que a fatura fecha (1-28)
+  dueDay       Int      // dia do mês em que a fatura vence (1-28)
+  color        String   @default("#4338CA")
+  archived     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  invoices     Invoice[]
+
+  @@index([userId])
+  @@map("credit_cards")
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  creditCardId   String
+  creditCard     CreditCard    @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+
+  referenceMonth DateTime      // primeiro dia do mês de referência da fatura (ex: 2026-08-01)
+  closingDate    DateTime
+  dueDate        DateTime
+  status         InvoiceStatus @default(ABERTA)
+  paidAt         DateTime?
+  paidTransactionId String?    // referencia a transação de despesa gerada ao pagar a fatura
+
+  items          InvoiceItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([creditCardId, referenceMonth])
+  @@index([creditCardId])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  description String
+  amount      Decimal  @db.Decimal(14, 2)
+  date        DateTime
+  categoryId  String?
+
+  installmentGroupId String?
+  installmentNumber  Int?
+  installmentTotal   Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+// ==========================================================
+// RECURRING RULES (AUTOMAÇÕES)
+// ==========================================================
+
+model RecurringRule {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  description String
+  amount      Decimal         @db.Decimal(14, 2)
+  type        TransactionType
+  dayOfMonth  Int             // dia do mês em que o lançamento deve ser gerado (1-28)
+
+  accountId   String
+  categoryId  String?
+  costCenterId String?
+  paymentMethod String?
+
+  active      Boolean         @default(true)
+  lastGeneratedMonth DateTime? // primeiro dia do último mês em que já foi gerado (evita duplicar)
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId])
+  @@map("recurring_rules")
+}
+
+// ==========================================================
+// METAS FINANCEIRAS
+// ==========================================================
+
+model Goal {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title        String
+  targetAmount Decimal  @db.Decimal(14, 2)
+  currentAmount Decimal @default(0) @db.Decimal(14, 2)
+  deadline     DateTime?
+  color        String   @default("#4338CA")
+  icon         String   @default("target")
+  archived     Boolean  @default(false)
+
+  contributions GoalContribution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("goals")
+}
+
+model GoalContribution {
+  id        String   @id @default(uuid())
+  goalId    String
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  amount    Decimal  @db.Decimal(14, 2)
+  date      DateTime
+  accountId String?  // conta de onde o valor saiu, se debitado (opcional)
+  notes     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([goalId])
+  @@map("goal_contributions")
+}
+
+// ==========================================================
+// TRILHA DE AUDITORIA
+// ==========================================================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  action     String   // ex: "CREATE", "UPDATE", "DELETE"
+  entity     String   // ex: "Transaction", "Account", "Goal"
+  entityId   String?
+  description String  // resumo legível, ex: "Criou lançamento 'Aluguel' de R$ 500,00"
+  metadata   Json?    // dados extras (antes/depois, etc.)
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("audit_logs")
 }

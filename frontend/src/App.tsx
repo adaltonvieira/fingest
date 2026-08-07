@@ -6,6 +6,12 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Accounts from './pages/Accounts';
 import Categories from './pages/Categories';
+import CreditCards from './pages/CreditCards';
+import Automations from './pages/Automations';
+import Goals from './pages/Goals';
+import Reports from './pages/Reports';
+import ImportExport from './pages/ImportExport';
+import Security from './pages/Security';
 import AppLayout from './components/AppLayout';
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
@@ -30,6 +36,12 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="transactions" element={<Transactions />} />
         <Route path="accounts" element={<Accounts />} />
+        <Route path="credit-cards" element={<CreditCards />} />
+        <Route path="goals" element={<Goals />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="import-export" element={<ImportExport />} />
+        <Route path="security" element={<Security />} />
+        <Route path="automations" element={<Automations />} />
         <Route path="categories" element={<Categories />} />
       </Route>
     </Routes>

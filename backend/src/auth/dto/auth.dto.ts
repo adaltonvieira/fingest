@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty()
@@ -25,10 +25,21 @@ export class LoginDto {
   @ApiProperty()
   @IsString()
   password: string;
+
+  @ApiProperty({ required: false, description: 'Necessário se o usuário tiver 2FA ativo' })
+  @IsOptional()
+  @IsString()
+  twoFactorCode?: string;
 }
 
 export class RefreshDto {
   @ApiProperty()
   @IsString()
   refreshToken: string;
+}
+
+export class Verify2faDto {
+  @ApiProperty({ description: 'Código de 6 dígitos do app autenticador' })
+  @IsString()
+  code: string;
 }

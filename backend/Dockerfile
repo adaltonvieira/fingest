@@ -1,5 +1,7 @@
 FROM node:20-alpine
 
+RUN apk add --no-cache openssl libssl3
+
 WORKDIR /app
 
 COPY package*.json ./

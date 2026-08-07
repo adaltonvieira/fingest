@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -7,6 +8,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import * as crypto from 'crypto';
+import { authenticator } from 'otplib';
+import * as QRCode from 'qrcode';
 import { PrismaService } from '../prisma.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 
@@ -63,7 +66,68 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
+    if (user.twoFactorEnabled) {
+      if (!dto.twoFactorCode) {
+        return { requiresTwoFactor: true };
+      }
+      const validCode = authenticator.verify({
+        token: dto.twoFactorCode,
+        secret: user.twoFactorSecret!,
+      });
+      if (!validCode) {
+        throw new UnauthorizedException('Código de verificação inválido');
+      }
+    }
+
     return this.issueTokens(user.id, user.email);
+  }
+
+  /** Gera um novo segredo TOTP e um QR code para o usuário escanear no app autenticador. */
+  async setupTwoFactor(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+
+    const secret = authenticator.generateSecret();
+    const otpauth = authenticator.keyuri(user.email, 'Fingest', secret);
+    const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
+
+    // Guarda o segredo temporariamente (só é "confirmado" quando o usuário validar o código)
+    await this.prisma.user.update({ where: { id: userId }, data: { twoFactorSecret: secret } });
+
+    return { secret, qrCodeDataUrl };
+  }
+
+  async enableTwoFactor(userId: string, code: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.twoFactorSecret) {
+      throw new BadRequestException('Gere um novo QR code antes de confirmar a ativação');
+    }
+
+    const valid = authenticator.verify({ token: code, secret: user.twoFactorSecret });
+    if (!valid) {
+      throw new BadRequestException('Código inválido. Confira o app autenticador e tente novamente.');
+    }
+
+    await this.prisma.user.update({ where: { id: userId }, data: { twoFactorEnabled: true } });
+    return { enabled: true };
+  }
+
+  async disableTwoFactor(userId: string, code: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.twoFactorEnabled || !user.twoFactorSecret) {
+      throw new BadRequestException('Autenticação de dois fatores não está ativa');
+    }
+
+    const valid = authenticator.verify({ token: code, secret: user.twoFactorSecret });
+    if (!valid) {
+      throw new BadRequestException('Código inválido');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: false, twoFactorSecret: null },
+    });
+    return { enabled: false };
   }
 
   async refresh(refreshToken: string) {
@@ -100,6 +164,14 @@ export class AuthService {
       data: { revoked: true },
     });
     return { success: true };
+  }
+
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, twoFactorEnabled: true, createdAt: true },
+    });
+    return user;
   }
 
   private async issueTokens(userId: string, email: string) {

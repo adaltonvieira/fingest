@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { randomUUID } from 'crypto';
 import { Prisma, TransactionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
+import { AuditService } from '../audit/audit.service';
 import {
   CreateTransactionDto,
   QueryTransactionDto,
@@ -10,7 +11,10 @@ import {
 
 @Injectable()
 export class TransactionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async create(userId: string, dto: CreateTransactionDto) {
     const account = await this.prisma.account.findUnique({ where: { id: dto.accountId } });
@@ -34,10 +38,7 @@ export class TransactionsService {
       return {
         userId,
         type: dto.type,
-        description:
-          installments > 1
-            ? `${dto.description} (${index + 1}/${installments})`
-            : dto.description,
+        description: dto.description,
         amount: installmentAmount,
         status: defaultStatus,
         date: installmentDate,
@@ -76,11 +77,26 @@ export class TransactionsService {
     });
 
     if (installments === 1) {
-      return this.prisma.transaction.findFirst({
+      const created = await this.prisma.transaction.findFirst({
         where: { userId, accountId: dto.accountId, description: dto.description },
         orderBy: { createdAt: 'desc' },
       });
+      await this.audit.log({
+        userId,
+        action: 'CREATE',
+        entity: 'Transaction',
+        entityId: created?.id,
+        description: `Criou lançamento "${dto.description}" de ${dto.type === 'RECEITA' ? '+' : '-'}R$ ${dto.amount.toFixed(2)}`,
+      });
+      return created;
     }
+
+    await this.audit.log({
+      userId,
+      action: 'CREATE',
+      entity: 'Transaction',
+      description: `Criou lançamento parcelado "${dto.description}" em ${installments}x, total R$ ${dto.amount.toFixed(2)}`,
+    });
 
     return result;
   }
@@ -122,7 +138,7 @@ export class TransactionsService {
   async update(userId: string, id: string, dto: UpdateTransactionDto) {
     const current = await this.findOne(userId, id);
 
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const wasSettled = current.status === 'PAGO' || current.status === 'RECEBIDO';
       const willBeSettled = dto.status === 'PAGO' || dto.status === 'RECEBIDO';
 
@@ -153,6 +169,21 @@ export class TransactionsService {
 
       return updated;
     });
+
+    await this.logUpdate(userId, current, updated);
+    return updated;
+  }
+
+  private async logUpdate(userId: string, current: any, updated: any) {
+    await this.audit.log({
+      userId,
+      action: 'UPDATE',
+      entity: 'Transaction',
+      entityId: current.id,
+      description: `Editou lançamento "${current.description}"${
+        current.status !== updated.status ? ` — status: ${current.status} → ${updated.status}` : ''
+      }`,
+    });
   }
 
   async remove(userId: string, id: string) {
@@ -167,6 +198,15 @@ export class TransactionsService {
         });
       }
       return tx.transaction.delete({ where: { id } });
+    }).then(async (deleted) => {
+      await this.audit.log({
+        userId,
+        action: 'DELETE',
+        entity: 'Transaction',
+        entityId: id,
+        description: `Excluiu lançamento "${current.description}" de R$ ${Number(current.amount).toFixed(2)}`,
+      });
+      return deleted;
     });
   }
 }

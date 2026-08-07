@@ -4,6 +4,7 @@ import { Plus, Wallet } from 'lucide-react';
 import { api } from '../api/client';
 import { formatCurrency } from '../utils/format';
 import Modal from '../components/Modal';
+import Select from '../components/Select';
 
 interface Account {
   id: string;
@@ -13,19 +14,20 @@ interface Account {
 }
 
 const ACCOUNT_TYPES = [
-  'CORRENTE',
-  'POUPANCA',
-  'CARTEIRA',
-  'DINHEIRO',
-  'PIX',
-  'INVESTIMENTO',
-  'CRIPTO',
-  'OUTRO',
+  { value: 'CORRENTE', label: 'Corrente' },
+  { value: 'POUPANCA', label: 'Poupança' },
+  { value: 'CARTEIRA', label: 'Carteira' },
+  { value: 'DINHEIRO', label: 'Dinheiro' },
+  { value: 'PIX', label: 'PIX' },
+  { value: 'INVESTIMENTO', label: 'Investimento' },
+  { value: 'CRIPTO', label: 'Cripto' },
+  { value: 'OUTRO', label: 'Outro' },
 ];
 
 export default function Accounts() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [type, setType] = useState('CORRENTE');
 
   const { data: accounts, isLoading } = useQuery<Account[]>({
     queryKey: ['accounts'],
@@ -45,7 +47,7 @@ export default function Accounts() {
     const form = new FormData(e.currentTarget);
     createMutation.mutate({
       name: form.get('name'),
-      type: form.get('type'),
+      type,
       initialBalance: Number(form.get('initialBalance') || 0),
     });
   }
@@ -58,7 +60,10 @@ export default function Accounts() {
           <p className="text-sm text-slate-500">Suas contas, carteiras e saldos</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setType('CORRENTE');
+            setShowModal(true);
+          }}
           className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
         >
           <Plus size={16} /> Nova conta
@@ -92,13 +97,9 @@ export default function Accounts() {
             </div>
             <div>
               <label className="text-sm font-medium">Tipo</label>
-              <select name="type" required className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-2 text-sm">
-                {ACCOUNT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
+              <div className="mt-1">
+                <Select value={type} onChange={setType} options={ACCOUNT_TYPES} />
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium">Saldo inicial (R$)</label>

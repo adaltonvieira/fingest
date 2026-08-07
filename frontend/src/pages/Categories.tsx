@@ -1,8 +1,9 @@
 import { FormEvent, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Tag } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { api } from '../api/client';
 import Modal from '../components/Modal';
+import Select from '../components/Select';
 
 interface Category {
   id: string;
@@ -15,6 +16,7 @@ interface Category {
 export default function Categories() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [type, setType] = useState<'RECEITA' | 'DESPESA'>('DESPESA');
 
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ['categories'],
@@ -35,7 +37,7 @@ export default function Categories() {
     const form = new FormData(e.currentTarget);
     createMutation.mutate({
       name: form.get('name'),
-      type: form.get('type'),
+      type,
       color: form.get('color'),
     });
   }
@@ -51,7 +53,10 @@ export default function Categories() {
           <p className="text-sm text-slate-500">Organize receitas e despesas</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setType('DESPESA');
+            setShowModal(true);
+          }}
           className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
         >
           <Plus size={16} /> Nova categoria
@@ -96,10 +101,16 @@ export default function Categories() {
             </div>
             <div>
               <label className="text-sm font-medium">Tipo</label>
-              <select name="type" required className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-2 text-sm">
-                <option value="DESPESA">Despesa</option>
-                <option value="RECEITA">Receita</option>
-              </select>
+              <div className="mt-1">
+                <Select
+                  value={type}
+                  onChange={(v) => setType(v as 'RECEITA' | 'DESPESA')}
+                  options={[
+                    { value: 'DESPESA', label: 'Despesa' },
+                    { value: 'RECEITA', label: 'Receita' },
+                  ]}
+                />
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium">Cor</label>

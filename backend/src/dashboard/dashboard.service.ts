@@ -56,6 +56,19 @@ export class DashboardService {
       include: { category: true, account: true },
     });
 
+    const in7Days = new Date(now);
+    in7Days.setDate(in7Days.getDate() + 7);
+    const vencendoEmBreve = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        status: 'PENDENTE',
+        dueDate: { gte: now, lte: in7Days },
+      },
+      orderBy: { dueDate: 'asc' },
+      include: { category: true, account: true },
+      take: 10,
+    });
+
     const porCategoria = await this.prisma.transaction.groupBy({
       by: ['categoryId'],
       where: {
@@ -97,6 +110,7 @@ export class DashboardService {
       saldoPrevisto:
         saldoAtual + Number(contasAReceber._sum.amount ?? 0) - Number(contasAPagar._sum.amount ?? 0),
       ultimasMovimentacoes,
+      vencendoEmBreve,
       despesasPorCategoria,
       contas: accounts,
     };

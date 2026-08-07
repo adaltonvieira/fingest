@@ -6,6 +6,7 @@ import {
   Scale,
   ArrowDownCircle,
   ArrowUpCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   PieChart,
@@ -35,6 +36,13 @@ interface DashboardSummary {
     date: string;
     status: string;
     category?: { name: string; color: string } | null;
+  }>;
+  vencendoEmBreve: Array<{
+    id: string;
+    description: string;
+    amount: string;
+    type: 'RECEITA' | 'DESPESA';
+    dueDate: string;
   }>;
   despesasPorCategoria: Array<{ categoryName: string; color: string; total: number }>;
 }
@@ -90,6 +98,39 @@ export default function Dashboard() {
         />
         <KpiCard label="Saldo Previsto" value={formatCurrency(data.saldoPrevisto)} icon={<Scale size={20} />} />
       </div>
+
+      {data.vencendoEmBreve.length > 0 && (
+        <div className="card border-amber-300 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-700">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={18} className="text-amber-600" />
+            <h2 className="font-semibold text-amber-800 dark:text-amber-400">
+              Vencendo nos próximos 7 dias
+            </h2>
+          </div>
+          <div className="divide-y divide-amber-200 dark:divide-amber-800">
+            {data.vencendoEmBreve.map((t) => (
+              <div key={t.id} className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-sm font-medium">{t.description}</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-500">
+                    Vence em {formatDate(t.dueDate)}
+                  </p>
+                </div>
+                <span
+                  className={
+                    t.type === 'RECEITA'
+                      ? 'text-emerald-600 font-semibold text-sm'
+                      : 'text-red-600 font-semibold text-sm'
+                  }
+                >
+                  {t.type === 'RECEITA' ? '+' : '-'}
+                  {formatCurrency(Number(t.amount))}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="card lg:col-span-1">

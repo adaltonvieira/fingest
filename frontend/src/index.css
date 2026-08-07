@@ -6,6 +6,17 @@ html {
   font-family: 'Inter', system-ui, sans-serif;
 }
 
+/* Muitos títulos, labels e parágrafos não têm uma classe de cor de texto
+   explícita (herdam a cor padrão do navegador, que é preta). Isso é fine no
+   tema claro, mas fica ilegível no tema escuro sobre fundo escuro. Em vez de
+   adicionar "dark:text-white" em cada elemento individualmente, definimos
+   aqui uma cor padrão clara para o modo escuro — elementos que já têm uma
+   classe de cor explícita (ex: text-slate-500) continuam com prioridade,
+   pois classes utilitárias têm maior especificidade que este seletor. */
+.dark body {
+  color: #f1f5f9;
+}
+
 .card {
   @apply bg-white dark:bg-[#171a21] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5;
 }
