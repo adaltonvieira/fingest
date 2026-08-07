@@ -131,7 +131,7 @@ export default function Transactions() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Lançamentos</h1>
           <p className="text-sm text-slate-500">Receitas e despesas</p>
@@ -160,8 +160,8 @@ export default function Transactions() {
         ))}
       </div>
 
-      <div className="card p-0 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="card p-0 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-xs uppercase">
             <tr>
               <th className="text-left px-4 py-3">Descrição</th>

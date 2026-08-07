@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, ArrowLeftRight, Wallet, Tags, CreditCard, Repeat, Target, BarChart3, FileUp, Shield, Moon, Sun, LogOut } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, Wallet, Tags, CreditCard, Repeat, Target, BarChart3, FileUp, Shield, Moon, Sun, LogOut, Menu, X } from 'lucide-react';
 import { useAuthStore } from '../store/auth-store';
 import { useThemeStore } from '../store/theme-store';
 import clsx from 'clsx';
@@ -20,12 +21,13 @@ const navItems = [
 export default function AppLayout() {
   const logout = useAuthStore((s) => s.logout);
   const { dark, toggle } = useThemeStore();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12141a] p-4 flex flex-col">
-        <div className="flex items-center justify-between px-2 mb-8">
-          <div className="text-xl font-bold text-brand-600">Fingest</div>
+  const sidebarContent = (
+    <>
+      <div className="flex items-center justify-between px-2 mb-8">
+        <div className="text-xl font-bold text-brand-600">Fingest</div>
+        <div className="flex items-center gap-1">
           <button
             onClick={toggle}
             title={dark ? 'Tema claro' : 'Tema escuro'}
@@ -33,38 +35,82 @@ export default function AppLayout() {
           >
             {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          {/* Botão de fechar só aparece na gaveta mobile */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="lg:hidden w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <X size={18} />
+          </button>
         </div>
-        <nav className="flex-1 space-y-1">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                clsx(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-500'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800',
-                )
-              }
-            >
-              <Icon size={18} />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-        <button
-          onClick={logout}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-        >
-          <LogOut size={18} />
-          Sair
-        </button>
+      </div>
+      <nav className="flex-1 space-y-1 overflow-y-auto">
+        {navItems.map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              clsx(
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-500'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800',
+              )
+            }
+          >
+            <Icon size={18} />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+      <button
+        onClick={logout}
+        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+      >
+        <LogOut size={18} />
+        Sair
+      </button>
+    </>
+  );
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Sidebar fixa em telas grandes (lg+) */}
+      <aside className="hidden lg:flex w-64 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12141a] p-4 flex-col">
+        {sidebarContent}
       </aside>
-      <main className="flex-1 p-8 overflow-y-auto">
-        <Outlet />
-      </main>
+
+      {/* Gaveta (drawer) para telas pequenas, com overlay escuro atrás */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMobileOpen(false)} />
+      )}
+      <aside
+        className={clsx(
+          'lg:hidden fixed inset-y-0 left-0 z-50 w-72 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12141a] p-4 flex flex-col transition-transform duration-200',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        {sidebarContent}
+      </aside>
+
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Barra superior só em telas pequenas, com botão de abrir o menu */}
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#12141a] sticky top-0 z-30">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <Menu size={20} />
+          </button>
+          <div className="text-lg font-bold text-brand-600">Fingest</div>
+        </div>
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

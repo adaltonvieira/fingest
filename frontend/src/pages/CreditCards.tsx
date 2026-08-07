@@ -172,8 +172,8 @@ export default function CreditCards() {
           </div>
         </div>
 
-        <div className="card p-0 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="card p-0 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-xs uppercase">
               <tr>
                 <th className="text-left px-4 py-3">Descrição</th>
@@ -223,7 +223,7 @@ export default function CreditCards() {
           <ChevronLeft size={16} /> Voltar para cartões
         </button>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{selectedCard.name}</h1>
             <p className="text-sm text-slate-500">
@@ -246,7 +246,7 @@ export default function CreditCards() {
               onClick={() => setSelectedInvoiceId(inv.id)}
               className="card text-left hover:border-brand-400 transition-colors"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <p className="font-semibold capitalize">{monthLabel(inv.referenceMonth)}</p>
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -305,7 +305,7 @@ export default function CreditCards() {
   // ---------- Lista de cartões ----------
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Cartões de crédito</h1>
           <p className="text-sm text-slate-500">Seus cartões e faturas</p>
