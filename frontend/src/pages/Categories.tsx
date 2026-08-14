@@ -67,25 +67,33 @@ export default function Categories() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card">
-          <h2 className="font-semibold mb-3">Despesas</h2>
-          <div className="space-y-2">
+          <h2 className="font-semibold mb-4">Despesas</h2>
+          <div className="flex flex-wrap gap-2">
             {despesas.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 text-sm">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+              <span
+                key={c.id}
+                className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-full"
+                style={{ backgroundColor: `${c.color}1a`, color: c.color }}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
                 {c.name}
-              </div>
+              </span>
             ))}
             {despesas.length === 0 && <p className="text-sm text-slate-500">Nenhuma categoria de despesa.</p>}
           </div>
         </div>
         <div className="card">
-          <h2 className="font-semibold mb-3">Receitas</h2>
-          <div className="space-y-2">
+          <h2 className="font-semibold mb-4">Receitas</h2>
+          <div className="flex flex-wrap gap-2">
             {receitas.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 text-sm">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+              <span
+                key={c.id}
+                className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-full"
+                style={{ backgroundColor: `${c.color}1a`, color: c.color }}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
                 {c.name}
-              </div>
+              </span>
             ))}
             {receitas.length === 0 && <p className="text-sm text-slate-500">Nenhuma categoria de receita.</p>}
           </div>

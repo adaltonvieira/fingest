@@ -70,22 +70,30 @@ export default function Accounts() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {isLoading && <p className="text-slate-500">Carregando...</p>}
-        {accounts?.map((a) => (
-          <div key={a.id} className="card">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 flex items-center justify-center">
-                <Wallet size={18} />
+        {accounts?.map((a) => {
+          const balance = Number(a.currentBalance);
+          return (
+            <div key={a.id} className="card">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-full bg-brand-600 text-white flex items-center justify-center shrink-0">
+                  <Wallet size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{a.name}</p>
+                  <span className="inline-block text-[10px] font-medium uppercase tracking-wide text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 mt-0.5">
+                    {a.type}
+                  </span>
+                </div>
               </div>
-              <div>
-                <p className="font-medium">{a.name}</p>
-                <p className="text-xs text-slate-500">{a.type}</p>
-              </div>
+              <p className="text-xs text-slate-500 uppercase font-medium mb-1">Saldo</p>
+              <p className={`text-xl font-bold ${balance < 0 ? 'text-red-600' : ''}`}>
+                {formatCurrency(balance)}
+              </p>
             </div>
-            <p className="text-xl font-bold">{formatCurrency(Number(a.currentBalance))}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {showModal && (

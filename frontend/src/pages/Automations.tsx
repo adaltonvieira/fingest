@@ -154,20 +154,33 @@ export default function Automations() {
             )}
             {rules?.map((r) => (
               <tr key={r.id}>
-                <td className="px-4 py-3 flex items-center gap-2">
-                  <Repeat size={14} className="text-slate-400" />
-                  {r.description}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        r.active
+                          ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10'
+                          : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+                      }`}
+                    >
+                      <Repeat size={14} />
+                    </span>
+                    {r.description}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-slate-500">Todo dia {r.dayOfMonth}</td>
                 <td className="px-4 py-3">
                   <button
                     onClick={() => toggleMutation.mutate({ id: r.id, active: !r.active })}
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                       r.active
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-slate-100 text-slate-500'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                        : 'bg-slate-100 text-slate-500 dark:bg-slate-800'
                     }`}
                   >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${r.active ? 'bg-emerald-500' : 'bg-slate-400'}`}
+                    />
                     {r.active ? 'Ativa' : 'Pausada'}
                   </button>
                 </td>
