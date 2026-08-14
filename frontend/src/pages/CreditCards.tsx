@@ -227,7 +227,7 @@ export default function CreditCards() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{selectedCard.name}</h1>
             <p className="text-sm text-slate-500">
-              {selectedCard.bank ?? 'Cartão'} · Limite {formatCurrency(Number(selectedCard.limit))} ·
+              {selectedCard.bank ?? 'Cartão'} ·
               Fecha dia {selectedCard.closingDay}, vence dia {selectedCard.dueDay}
             </p>
           </div>
@@ -238,6 +238,42 @@ export default function CreditCards() {
             <Plus size={16} /> Nova compra
           </button>
         </div>
+
+        {invoices && (
+          <div className="card">
+            {(() => {
+              const emAberto = invoices
+                .filter((i) => i.status !== 'PAGA')
+                .reduce((sum, i) => sum + i.total, 0);
+              const limitTotal = Number(selectedCard.limit);
+              const pctUsed = limitTotal > 0 ? Math.min(100, (emAberto / limitTotal) * 100) : 0;
+              const disponivel = Math.max(0, limitTotal - emAberto);
+
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-slate-500 uppercase font-medium">Em aberto</p>
+                  </div>
+                  <p className="text-2xl font-bold text-red-600 mb-4">{formatCurrency(emAberto)}</p>
+
+                  <div className="flex items-center justify-between text-sm mb-1.5">
+                    <span className="text-slate-500">Limite disponível</span>
+                    <span className="font-semibold">{formatCurrency(disponivel)}</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pctUsed}%`, backgroundColor: selectedCard.color }}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {Math.round(pctUsed)}% usado de {formatCurrency(limitTotal)}
+                  </p>
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {invoices?.map((inv) => (
@@ -318,32 +354,43 @@ export default function CreditCards() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {loadingCards && <p className="text-slate-500">Carregando...</p>}
         {cards?.map((c) => (
           <button
             key={c.id}
             onClick={() => setSelectedCard(c)}
-            className="card text-left hover:border-brand-400 transition-colors"
-            style={{ borderTopColor: c.color, borderTopWidth: 3 }}
+            className="text-left rounded-3xl p-5 text-white shadow-lg hover:scale-[1.02] transition-transform"
+            style={{
+              background: `linear-gradient(135deg, ${c.color}, ${c.color}cc)`,
+            }}
           >
-            <div className="flex items-center gap-3 mb-3">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
-                style={{ backgroundColor: c.color }}
-              >
-                <CardIcon size={18} />
-              </div>
-              <div>
-                <p className="font-medium">{c.name}</p>
-                <p className="text-xs text-slate-500">{c.bank ?? 'Cartão de crédito'}</p>
-              </div>
+            <div className="flex items-center justify-between mb-8">
+              <span className="font-bold text-lg">{c.bank ?? c.name}</span>
+              <CardIcon size={22} className="opacity-80" />
             </div>
-            <p className="text-sm text-slate-500">Limite</p>
-            <p className="text-lg font-bold">{formatCurrency(Number(c.limit))}</p>
-            <p className="text-xs text-slate-400 mt-2">
-              Fecha dia {c.closingDay} · Vence dia {c.dueDay}
-            </p>
+            <div className="flex items-center gap-2 mb-1 opacity-70">
+              {[...Array(3)].map((_, i) => (
+                <span key={i} className="flex gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
+                </span>
+              ))}
+            </div>
+            <p className="text-sm font-medium mb-4">{c.name}</p>
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-xs opacity-70">Limite</p>
+                <p className="text-lg font-bold">{formatCurrency(Number(c.limit))}</p>
+              </div>
+              <p className="text-xs opacity-70 text-right">
+                Fecha dia {c.closingDay}
+                <br />
+                Vence dia {c.dueDay}
+              </p>
+            </div>
           </button>
         ))}
         {cards?.length === 0 && (

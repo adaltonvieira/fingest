@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { api } from '../api/client';
 import { formatCurrency, formatDate } from '../utils/format';
 import Modal from '../components/Modal';
@@ -144,15 +144,15 @@ export default function Transactions() {
         </button>
       </div>
 
-      <div className="flex gap-2">
+      <div className="inline-flex bg-slate-100 dark:bg-slate-800/60 rounded-full p-1 gap-1">
         {(['', 'RECEITA', 'DESPESA'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTypeFilter(t)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               typeFilter === t
-                ? 'bg-brand-600 text-white border-brand-600'
-                : 'border-slate-300 dark:border-slate-700 text-slate-600'
+                ? 'bg-brand-600 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60'
             }`}
           >
             {t === '' ? 'Todos' : t === 'RECEITA' ? 'Receitas' : 'Despesas'}
@@ -187,18 +187,39 @@ export default function Transactions() {
                 className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/60"
               >
                 <td className="px-4 py-3">
-                  {t.description}
-                  {t.installmentTotal && t.installmentTotal > 1 && (
-                    <span className="text-xs text-slate-400 ml-1">
-                      ({t.installmentNumber}/{t.installmentTotal})
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        t.type === 'RECEITA'
+                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10'
+                          : 'bg-red-50 text-red-600 dark:bg-red-500/10'
+                      }`}
+                    >
+                      {t.type === 'RECEITA' ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
                     </span>
-                  )}
+                    <span>
+                      {t.description}
+                      {t.installmentTotal && t.installmentTotal > 1 && (
+                        <span className="text-xs text-slate-400 ml-1">
+                          ({t.installmentNumber}/{t.installmentTotal})
+                        </span>
+                      )}
+                    </span>
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-slate-500">{t.category?.name ?? '-'}</td>
                 <td className="px-4 py-3 text-slate-500">{t.account?.name ?? '-'}</td>
                 <td className="px-4 py-3 text-slate-500">{formatDate(t.date)}</td>
                 <td className="px-4 py-3">
-                  <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800">
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                      t.status === 'PAGO' || t.status === 'RECEBIDO'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                        : t.status === 'CANCELADO'
+                        ? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                        : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
+                    }`}
+                  >
                     {t.status}
                   </span>
                 </td>

@@ -6,6 +6,10 @@ html {
   font-family: 'Inter', system-ui, sans-serif;
 }
 
+body {
+  @apply bg-cream dark:bg-surface-dark;
+}
+
 /* Muitos títulos, labels e parágrafos não têm uma classe de cor de texto
    explícita (herdam a cor padrão do navegador, que é preta). Isso é fine no
    tema claro, mas fica ilegível no tema escuro sobre fundo escuro. Em vez de
@@ -18,5 +22,5 @@ html {
 }
 
 .card {
-  @apply bg-white dark:bg-[#171a21] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5;
+  @apply bg-white dark:bg-[#1c1f26] rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] dark:shadow-none border border-black/5 dark:border-slate-800 p-5;
 }

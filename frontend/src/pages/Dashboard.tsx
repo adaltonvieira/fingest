@@ -7,6 +7,7 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   AlertTriangle,
+  Eye,
 } from 'lucide-react';
 import {
   PieChart,
@@ -16,6 +17,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { useState } from 'react';
 import { api } from '../api/client';
 import KpiCard from '../components/KpiCard';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -48,6 +50,8 @@ interface DashboardSummary {
 }
 
 export default function Dashboard() {
+  const [showBalance, setShowBalance] = useState(true);
+
   const { data, isLoading } = useQuery<DashboardSummary>({
     queryKey: ['dashboard-summary'],
     queryFn: async () => (await api.get('/dashboard/summary')).data,
@@ -57,6 +61,8 @@ export default function Dashboard() {
     return <div className="text-slate-500">Carregando dashboard...</div>;
   }
 
+  const masked = (value: string) => (showBalance ? value : '••••••');
+
   return (
     <div className="space-y-6">
       <div>
@@ -64,26 +70,38 @@ export default function Dashboard() {
         <p className="text-sm text-slate-500">Visão geral das suas finanças</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard label="Saldo Atual" value={formatCurrency(data.saldoAtual)} icon={<Wallet size={20} />} />
-        <KpiCard
-          label="Receitas do mês"
-          value={formatCurrency(data.receitasMes)}
-          icon={<TrendingUp size={20} />}
-          tone="positive"
-        />
-        <KpiCard
-          label="Despesas do mês"
-          value={formatCurrency(data.despesasMes)}
-          icon={<TrendingDown size={20} />}
-          tone="negative"
-        />
-        <KpiCard
-          label="Lucro do mês"
-          value={formatCurrency(data.lucroMes)}
-          icon={<Scale size={20} />}
-          tone={data.lucroMes >= 0 ? 'positive' : 'negative'}
-        />
+      <div className="card bg-gradient-to-br from-brand-600 to-brand-700 text-white border-none">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm text-brand-100 font-medium">Saldo Disponível</p>
+          <button
+            onClick={() => setShowBalance((s) => !s)}
+            className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 transition-colors"
+          >
+            <Eye size={16} />
+          </button>
+        </div>
+        <p className="text-4xl font-bold mb-4 tracking-wide">{masked(formatCurrency(data.saldoAtual))}</p>
+
+        <div className="flex flex-wrap gap-x-6 gap-y-2 pt-4 border-t border-white/15">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={16} className="text-emerald-300" />
+            <span className="text-xs text-brand-100">Entradas</span>
+            <span className="text-sm font-semibold">{masked(formatCurrency(data.receitasMes))}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <TrendingDown size={16} className="text-red-300" />
+            <span className="text-xs text-brand-100">Saídas</span>
+            <span className="text-sm font-semibold">{masked(formatCurrency(data.despesasMes))}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Scale size={16} className="text-amber-200" />
+            <span className="text-xs text-brand-100">Lucro</span>
+            <span className="text-sm font-semibold">{masked(formatCurrency(data.lucroMes))}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard
           label="Contas a Pagar"
           value={`${formatCurrency(data.contasAPagar.total)} (${data.contasAPagar.quantidade})`}
@@ -96,7 +114,7 @@ export default function Dashboard() {
           icon={<ArrowUpCircle size={20} />}
           tone="positive"
         />
-        <KpiCard label="Saldo Previsto" value={formatCurrency(data.saldoPrevisto)} icon={<Scale size={20} />} />
+        <KpiCard label="Saldo Previsto" value={formatCurrency(data.saldoPrevisto)} icon={<Wallet size={20} />} />
       </div>
 
       {data.vencendoEmBreve.length > 0 && (

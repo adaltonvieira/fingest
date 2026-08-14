@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { api } from '../api/client';
 import { formatCurrency, formatDate } from '../utils/format';
+import { ArrowUpRight, ArrowDownRight, Scale } from 'lucide-react';
 
 interface MonthComparison {
   year: number;
@@ -103,8 +104,8 @@ export default function Reports() {
               <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `R$${v}`} />
               <Tooltip formatter={(value: number) => formatCurrency(value)} />
               <Legend />
-              <Bar dataKey="receitas" name="Receitas" fill="#10B981" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="despesas" name="Despesas" fill="#EF4444" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="receitas" name="Receitas" fill="#0ea5a3" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="despesas" name="Despesas" fill="#f87171" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -116,18 +117,18 @@ export default function Reports() {
           <h2 className="font-semibold text-lg">
             {MONTH_NAMES[month - 1]} de {year}
           </h2>
-          <div className="flex gap-2">
+          <div className="inline-flex bg-slate-100 dark:bg-slate-800/60 rounded-full p-1 gap-1">
             <button
               onClick={() => changeMonth(-1)}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="px-4 py-1.5 rounded-full text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition-colors"
             >
-              ← Mês anterior
+              ← Anterior
             </button>
             <button
               onClick={() => changeMonth(1)}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="px-4 py-1.5 rounded-full text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition-colors"
             >
-              Próximo mês →
+              Próximo →
             </button>
           </div>
         </div>
@@ -137,21 +138,36 @@ export default function Reports() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="card">
-                <p className="text-xs text-slate-500 uppercase">Receitas</p>
-                <p className="text-2xl font-bold text-emerald-600">{formatCurrency(report.receitas)}</p>
-                <p className="text-xs text-slate-400 mt-1">{report.quantidadeReceitas} lançamento(s)</p>
+              <div className="card flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase font-medium">Receitas</p>
+                  <p className="text-2xl font-bold text-emerald-600">{formatCurrency(report.receitas)}</p>
+                  <p className="text-xs text-slate-400 mt-1">{report.quantidadeReceitas} lançamento(s)</p>
+                </div>
+                <span className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                  <ArrowUpRight size={18} />
+                </span>
               </div>
-              <div className="card">
-                <p className="text-xs text-slate-500 uppercase">Despesas</p>
-                <p className="text-2xl font-bold text-red-600">{formatCurrency(report.despesas)}</p>
-                <p className="text-xs text-slate-400 mt-1">{report.quantidadeDespesas} lançamento(s)</p>
+              <div className="card flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase font-medium">Despesas</p>
+                  <p className="text-2xl font-bold text-red-600">{formatCurrency(report.despesas)}</p>
+                  <p className="text-xs text-slate-400 mt-1">{report.quantidadeDespesas} lançamento(s)</p>
+                </div>
+                <span className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
+                  <ArrowDownRight size={18} />
+                </span>
               </div>
-              <div className="card">
-                <p className="text-xs text-slate-500 uppercase">Lucro</p>
-                <p className={`text-2xl font-bold ${report.lucro >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {formatCurrency(report.lucro)}
-                </p>
+              <div className="card flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase font-medium">Lucro</p>
+                  <p className={`text-2xl font-bold ${report.lucro >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {formatCurrency(report.lucro)}
+                  </p>
+                </div>
+                <span className="w-10 h-10 rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-600 flex items-center justify-center shrink-0">
+                  <Scale size={18} />
+                </span>
               </div>
             </div>
 
