@@ -43,3 +43,15 @@ export class Verify2faDto {
   @IsString()
   code: string;
 }
+
+export class UpdatePaymentHandlesDto {
+  @ApiProperty({ required: false, description: 'Handle InfinitePay da conta Pessoa Física (Pix)' })
+  @IsOptional()
+  @IsString()
+  infinitePayHandlePF?: string;
+
+  @ApiProperty({ required: false, description: 'Handle InfinitePay da conta Pessoa Jurídica (cartão)' })
+  @IsOptional()
+  @IsString()
+  infinitePayHandlePJ?: string;
+}

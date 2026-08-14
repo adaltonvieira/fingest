@@ -15,6 +15,7 @@ import { ReportsModule } from './reports/reports.module';
 import { ImportExportModule } from './import-export/import-export.module';
 import { AuditModule } from './audit/audit.module';
 import { BackupModule } from './backup/backup.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { BackupModule } from './backup/backup.module';
     ImportExportModule,
     AuditModule,
     BackupModule,
+    PaymentsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

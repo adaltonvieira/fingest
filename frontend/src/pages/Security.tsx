@@ -23,13 +23,41 @@ export default function Security() {
 
   // Consulta o status real de 2FA do usuário ao carregar a página, em vez de
   // depender só do estado da sessão atual.
-  const { data: me } = useQuery<{ twoFactorEnabled: boolean }>({
+  const { data: me } = useQuery<{
+    twoFactorEnabled: boolean;
+    infinitePayHandlePF?: string | null;
+    infinitePayHandlePJ?: string | null;
+  }>({
     queryKey: ['auth-me'],
     queryFn: async () => (await api.get('/auth/me')).data,
   });
 
   const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean | null>(null);
   const effectiveTwoFactorEnabled = twoFactorEnabled ?? me?.twoFactorEnabled ?? false;
+
+  const [handlePJ, setHandlePJ] = useState('');
+  const [handlesInitialized, setHandlesInitialized] = useState(false);
+  if (me && !handlesInitialized) {
+    setHandlePJ(me.infinitePayHandlePJ ?? '');
+    setHandlesInitialized(true);
+  }
+
+  const savePaymentHandlesMutation = useMutation({
+    mutationFn: (payload: { infinitePayHandlePJ: string }) =>
+      api.post('/auth/payment-handles', payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth-me'] });
+      setMessage({ type: 'success', text: 'Configuração de recebimento salva com sucesso!' });
+    },
+    onError: () => {
+      setMessage({ type: 'error', text: 'Não foi possível salvar. Tente novamente.' });
+    },
+  });
+
+  function handleSavePaymentHandles(e: FormEvent) {
+    e.preventDefault();
+    savePaymentHandlesMutation.mutate({ infinitePayHandlePJ: handlePJ });
+  }
 
   const { data: auditLog, isLoading: loadingAudit } = useQuery<AuditEntry[]>({
     queryKey: ['audit-log'],
@@ -213,6 +241,34 @@ export default function Security() {
             </form>
           </div>
         )}
+      </div>
+
+      {/* Recebimento via InfinitePay (cartão) */}
+      <div className="card">
+        <h2 className="font-semibold mb-2">Recebimento por cartão (InfinitePay)</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          Configure o handle da sua conta InfinitePay (Pessoa Jurídica) para gerar cobranças de
+          cartão diretamente dos lançamentos. Pagamentos via Pix continuam sendo registrados
+          manualmente, já que caem direto na sua conta bancária.
+        </p>
+        <form onSubmit={handleSavePaymentHandles} className="space-y-3 max-w-sm">
+          <div>
+            <label className="text-sm font-medium">Handle InfinitePay (Pessoa Jurídica)</label>
+            <input
+              value={handlePJ}
+              onChange={(e) => setHandlePJ(e.target.value)}
+              placeholder="@seuhandle_pj"
+              className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-2 text-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={savePaymentHandlesMutation.isPending}
+            className="bg-brand-600 hover:bg-brand-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
+          >
+            {savePaymentHandlesMutation.isPending ? 'Salvando...' : 'Salvar configuração'}
+          </button>
+        </form>
       </div>
 
       {/* Backup */}

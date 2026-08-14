@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, RefreshDto, Verify2faDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, RefreshDto, Verify2faDto, UpdatePaymentHandlesDto } from './dto/auth.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
 
@@ -37,6 +37,16 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.getMe(user.userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('payment-handles')
+  updatePaymentHandles(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdatePaymentHandlesDto,
+  ) {
+    return this.authService.updatePaymentHandles(user.userId, dto);
   }
 
   @ApiBearerAuth()

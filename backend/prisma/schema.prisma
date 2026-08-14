@@ -52,6 +52,8 @@ model User {
   passwordHash String
   twoFactorSecret  String?
   twoFactorEnabled Boolean @default(false)
+  infinitePayHandlePF String? // usado para gerar cobranças Pix (conta Pessoa Física)
+  infinitePayHandlePJ String? // usado para gerar cobranças de cartão (conta Pessoa Jurídica)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -64,6 +66,7 @@ model User {
   recurringRules RecurringRule[]
   goals        Goal[]
   auditLogs    AuditLog[]
+  paymentCharges PaymentCharge[]
 
   @@map("users")
 }
@@ -351,4 +354,46 @@ model AuditLog {
 
   @@index([userId, createdAt])
   @@map("audit_logs")
+}
+
+// ==========================================================
+// COBRANÇAS (INTEGRAÇÃO INFINITEPAY)
+// ==========================================================
+
+enum PaymentMethod {
+  PIX
+  CARD
+}
+
+enum PaymentChargeStatus {
+  PENDENTE
+  PAGO
+  EXPIRADO
+  CANCELADO
+}
+
+model PaymentCharge {
+  id            String              @id @default(uuid())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactionId String              // referencia a Transaction (receita) que esta cobrança está quitando
+  method        PaymentMethod
+  status        PaymentChargeStatus @default(PENDENTE)
+
+  amount        Decimal             @db.Decimal(14, 2)
+  handle        String              // handle InfinitePay usado (PF para Pix, PJ para cartão)
+
+  externalId    String?             // id da cobrança no lado da InfinitePay
+  paymentUrl    String?             // link de pagamento retornado pela API
+  qrCodeUrl     String?             // imagem do QR Code, se aplicável
+
+  paidAt        DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([transactionId])
+  @@index([externalId])
+  @@map("payment_charges")
 }

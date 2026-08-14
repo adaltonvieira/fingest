@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownRight, Copy, CheckCircle2 } from 'lucide-react';
 import { api } from '../api/client';
 import { formatCurrency, formatDate } from '../utils/format';
 import Modal from '../components/Modal';
@@ -36,6 +36,93 @@ const STATUS_OPTIONS = [
   { value: 'RECEBIDO', label: 'Recebido' },
   { value: 'CANCELADO', label: 'Cancelado' },
 ];
+
+interface PaymentCharge {
+  id: string;
+  method: 'PIX' | 'CARD';
+  status: 'PENDENTE' | 'PAGO' | 'EXPIRADO' | 'CANCELADO';
+  paymentUrl: string | null;
+}
+
+/** Gera e exibe uma cobrança InfinitePay (Pix ou cartão) para uma receita pendente. */
+function ChargeSection({ transactionId }: { transactionId: string }) {
+  const queryClient = useQueryClient();
+  const [copied, setCopied] = useState(false);
+
+  const { data: existingCharge } = useQuery<PaymentCharge | null>({
+    queryKey: ['payment-charge', transactionId],
+    queryFn: async () =>
+      (await api.get(`/payments/charges/by-transaction/${transactionId}`)).data,
+  });
+
+  const createChargeMutation = useMutation({
+    mutationFn: (method: 'PIX' | 'CARD') => api.post('/payments/charges', { transactionId, method }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payment-charge', transactionId] });
+    },
+  });
+
+  const charge = existingCharge;
+
+  if (charge && charge.status === 'PENDENTE' && charge.paymentUrl) {
+    return (
+      <div className="rounded-lg border border-brand-200 dark:border-brand-500/30 bg-brand-50 dark:bg-brand-500/10 p-3 space-y-2">
+        <p className="text-xs font-medium text-brand-700 dark:text-brand-400">
+          Cobrança {charge.method === 'PIX' ? 'Pix' : 'cartão'} gerada — aguardando pagamento
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={charge.paymentUrl}
+            className="flex-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 truncate"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(charge.paymentUrl!);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="shrink-0 w-8 h-8 rounded flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"
+          >
+            {copied ? <CheckCircle2 size={14} className="text-emerald-600" /> : <Copy size={14} />}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (charge && charge.status === 'PAGO') {
+    return (
+      <div className="rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 p-3 flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+        <CheckCircle2 size={16} /> Cobrança paga
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-medium text-slate-500 mb-2">Gerar cobrança de cartão</p>
+      <button
+        type="button"
+        onClick={() => createChargeMutation.mutate('CARD')}
+        disabled={createChargeMutation.isPending}
+        className="w-full flex items-center justify-center gap-2 border border-slate-300 dark:border-slate-700 rounded-lg py-2 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800"
+      >
+        Gerar link de cartão (InfinitePay)
+      </button>
+      <p className="text-xs text-slate-400 mt-1">
+        Pix é registrado manualmente — marque como "Recebido" quando o valor cair na conta.
+      </p>
+      {createChargeMutation.isError && (
+        <p className="text-xs text-red-600 mt-2">
+          {(createChargeMutation.error as any)?.response?.data?.message ??
+            'Não foi possível gerar a cobrança.'}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function Transactions() {
   const queryClient = useQueryClient();
@@ -375,6 +462,10 @@ export default function Transactions() {
                 <Select value={editStatus} onChange={setEditStatus} options={STATUS_OPTIONS} />
               </div>
             </div>
+            {editingTransaction.type === 'RECEITA' && editingTransaction.status === 'PENDENTE' && (
+              <ChargeSection transactionId={editingTransaction.id} />
+            )}
+
             <div className="flex gap-2 pt-2">
               <button
                 type="submit"

@@ -169,9 +169,28 @@ export class AuthService {
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true, twoFactorEnabled: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        twoFactorEnabled: true,
+        createdAt: true,
+        infinitePayHandlePF: true,
+        infinitePayHandlePJ: true,
+      },
     });
     return user;
+  }
+
+  async updatePaymentHandles(
+    userId: string,
+    data: { infinitePayHandlePF?: string; infinitePayHandlePJ?: string },
+  ) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+    return this.getMe(userId);
   }
 
   private async issueTokens(userId: string, email: string) {
