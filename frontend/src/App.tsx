@@ -12,6 +12,7 @@ import Goals from './pages/Goals';
 import Reports from './pages/Reports';
 import ImportExport from './pages/ImportExport';
 import Security from './pages/Security';
+import Help from './pages/Help';
 import AppLayout from './components/AppLayout';
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="security" element={<Security />} />
         <Route path="automations" element={<Automations />} />
         <Route path="categories" element={<Categories />} />
+        <Route path="help" element={<Help />} />
       </Route>
     </Routes>
   );

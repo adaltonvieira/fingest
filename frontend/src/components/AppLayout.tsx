@@ -17,6 +17,7 @@ import {
   Plus,
   Grid3x3,
   X,
+  HelpCircle,
 } from 'lucide-react';
 import { useAuthStore } from '../store/auth-store';
 import { useThemeStore } from '../store/theme-store';
@@ -33,6 +34,7 @@ const navItems = [
   { to: '/import-export', label: 'Importar/Exportar', icon: FileUp, end: false },
   { to: '/security', label: 'Segurança', icon: Shield, end: false },
   { to: '/categories', label: 'Categorias', icon: Tags, end: false },
+  { to: '/help', label: 'Ajuda', icon: HelpCircle, end: false },
 ];
 
 const BOTTOM_NAV_ITEMS = [
